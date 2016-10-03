@@ -1,4 +1,20 @@
-https://codeshare.io/q8sSC
+
+// ---------------------------------------------------------------------------
+// Robot Code
+// Currently runs motors
+// Adding in sonar, gyroscope, revolution counting, and possibly wifi
+// ---------------------------------------------------------------------------
+
+//Set up the sonar
+#include <NewPing.h>
+#define SONAR_NUM 2      // Number of sensors.  (2 in this case)
+#define MAX_DISTANCE 200 // Maximum distance (in cm) to ping.
+
+NewPing sonar[SONAR_NUM] = {   // Sensor object array.
+  NewPing(12, 12, MAX_DISTANCE), // Each sensor's trigger pin, echo pin, and max distance to ping. 
+  NewPing(13, 13, MAX_DISTANCE), 
+};
+
 // connect motor controller pins to Arduino digital pins
 // motor one
 int enA = 10;
@@ -11,6 +27,8 @@ int in4 = 6;
 
 void setup()
 {
+  Serial.begin(115200); // Open serial monitor at 115200 baud to output results.
+  
   // set all the motor control pins to outputs
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
@@ -18,7 +36,7 @@ void setup()
   pinMode(in2, OUTPUT);
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
-  runDemo();
+  //runDemo();
 }
 
 void runDemo()
@@ -28,7 +46,7 @@ void runDemo()
   //do all of this 4 times
   for (int i = 0; i < 4; ++i)
   {
-    goForward(100);
+    //goForward(100);
     goTurn(2,20);
     stopMotors(3);
     delay(1000); // wait 1 second
@@ -44,15 +62,22 @@ void setSpeed(int Speed)
     analogWrite(enB, Speed);
 }
 
-void goForward(int fTime)
+void goForward()
 {
   // turn on motors forward
-  //fTime is in mS so 100 = 1 second
   digitalWrite(in1, HIGH);
   digitalWrite(in2, LOW);
   digitalWrite(in3, HIGH);
   digitalWrite(in4, LOW);
-  delay(fTime*10); // for 100 = 1 second
+}
+
+void goBackward()
+{
+  // turn on motors forward
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
 }
 
 void goTurn(int turnDir, int tTime)
@@ -97,4 +122,27 @@ void stopMotors(int Mtrs)
 
 void loop()
 {
+  setSpeed(255);
+  int leftPing = sonar[0].ping_in();
+  int rightPing = sonar[1].ping_in();
+  if (leftPing == 0) { leftPing = 50; }
+  if (rightPing == 0) { rightPing = 50; }
+  if ((leftPing > 6) && (rightPing > 6))
+  {
+    goForward();
+  } else if ((leftPing < 7) && (rightPing < 7))
+  {
+    goBackward();
+    delay(100);
+    goTurn(2,40);
+    leftPing = 50;
+    rightPing = 50;
+  } else if (leftPing < 7)
+  {
+    goTurn(2,20);
+  } else if (rightPing < 7)
+  {
+    goTurn(1,20);
+  }
+  delay(30);
 }
